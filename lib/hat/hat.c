@@ -116,7 +116,12 @@ uint8_t read_pin(GPIO_TypeDef* GPIOx, uint8_t pin){
     return (GPIOx->IDR >> pin) & 0x1;
 }
 
-void init_gp_timer(TIM_TypeDef* TIMx, uint16_t freq, uint16_t arr){
+void toggle_pin(GPIO_TypeDef* GPIOx, uint8_t pin){
+    GPIOx->ODR ^= (1 << pin);
+    return;
+}
+
+void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint16_t arr){
     if(TIMx->CR1 & TIM_CR1_CEN){
         return;
     }
@@ -157,10 +162,57 @@ void init_gp_timer(TIM_TypeDef* TIMx, uint16_t freq, uint16_t arr){
 
     TIMx->PSC = (SYSTEM_FREQ / freq) - 1;
     TIMx->ARR = arr - 1;
-    TIMx->DIER |= TIM_DIER_UIE;
     TIMx->CNT = 0;
     TIMx->CR1 |= TIM_CR1_CEN;
     return;
+}
+
+void init_timer_IRQ(TIM_TypeDef* TIMx, uint16_t priority){
+    TIMx->DIER |= TIM_DIER_UIE;
+    switch((int)TIMx){
+        case (int)TIM2:
+            NVIC_EnableIRQ(TIM2_IRQn);
+            NVIC_SetPriority(TIM2_IRQn, priority);
+            break;
+        case (int)TIM3:
+            NVIC_EnableIRQ(TIM3_IRQn);
+            NVIC_SetPriority(TIM3_IRQn, priority);
+            break;
+        case (int)TIM4:
+            NVIC_EnableIRQ(TIM4_IRQn);
+            NVIC_SetPriority(TIM4_IRQn, priority);
+            break;
+        case (int)TIM5:
+            NVIC_EnableIRQ(TIM5_IRQn);
+            NVIC_SetPriority(TIM5_IRQn, priority);
+            break;
+        case (int)TIM9:
+            NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
+            NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, priority);
+            break;
+        case (int)TIM10:
+            NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
+            NVIC_SetPriority(TIM1_UP_TIM10_IRQn, priority);
+            break;
+        case (int)TIM11:
+            NVIC_EnableIRQ(TIM1_TRG_COM_TIM11_IRQn);
+            NVIC_SetPriority(TIM1_TRG_COM_TIM11_IRQn, priority);
+            break;
+        case (int)TIM12:
+            NVIC_EnableIRQ(TIM8_BRK_TIM12_IRQn);
+            NVIC_SetPriority(TIM8_BRK_TIM12_IRQn, priority);
+            break;
+        case (int)TIM13:
+            NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
+            NVIC_SetPriority(TIM8_UP_TIM13_IRQn, priority);
+            break;
+        case (int)TIM14:
+            NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
+            NVIC_SetPriority(TIM8_TRG_COM_TIM14_IRQn, priority);
+            break;
+        default:
+            break;
+    }
 }
 
 void init_ssd( uint16_t reload_time){
@@ -194,8 +246,11 @@ void display_num(uint16_t num, uint8_t decimal_place){
 void init_ultrasound(void){
     init_gpio(ULTRA_SOUND.TRIG_PORT);
     set_pin_mode(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, OUTPUT);
+    write_pin(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, LOW);
+
     init_gpio(ULTRA_SOUND.ECHO_PORT);
     set_pin_mode(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, INPUT);
+    set_pin_pull(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, PULL_DOWN);
 }
 
 
