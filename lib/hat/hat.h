@@ -19,6 +19,13 @@ typedef struct{
     uint8_t ACTIVE_DIGIT;
 }SSD_t;
 
+typedef struct{
+    GPIO_TypeDef* TRIG_PORT;
+    uint8_t TRIG_PIN;
+    GPIO_TypeDef* ECHO_PORT;
+    uint8_t ECHO_PIN;
+}ULTRA_SOUND_t;
+
 typedef enum{
     INPUT = 0U,
     OUTPUT = 1U,

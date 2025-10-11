@@ -16,6 +16,13 @@ const PMOD_t PMOD_C = {
     .PIN_NUMS = {0, 1, 2, 3, 0xFF, 0xFF, 0xFF, 0xFF}
 };
 
+const ULTRA_SOUND_t ULTRA_SOUND = {
+    .TRIG_PORT = GPIOA,
+    .TRIG_PIN = 4,
+    .ECHO_PORT = GPIOB,
+    .ECHO_PIN = 0
+};
+
 SSD_t SSD = {
     .GPIO_PORTS = {GPIOA, GPIOB, GPIOC},
     .DATA_PIN_PORTS = {GPIOB, GPIOA, GPIOB, GPIOB, GPIOB, GPIOB, GPIOA, GPIOB},
@@ -135,6 +142,15 @@ void display_num(uint16_t num, uint8_t decimal_place){
         num /= 10;
     }
     ssd_out[decimal_place] |= 1;
+}
+
+void init_ultrasound(void){
+    init_gpio(ULTRA_SOUND.TRIG_PORT);
+    set_pin_mode(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, OUTPUT);
+    init_gpio(ULTRA_SOUND.ECHO_PORT);
+    set_pin_mode(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, INPUT);
+    
+
 }
 
 // local functions
