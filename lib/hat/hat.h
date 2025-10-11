@@ -62,6 +62,7 @@ void write_pin(GPIO_TypeDef* GPIOx, uint8_t pin, PIN_VALUE value);
 uint8_t read_pin(GPIO_TypeDef* GPIOx, uint8_t pin);
 void init_ssd (uint16_t reload_time);
 void display_num(uint16_t num, uint8_t decimal_place);
+void init_ultrasound(void);
 
 
 #endif //HAT_H
