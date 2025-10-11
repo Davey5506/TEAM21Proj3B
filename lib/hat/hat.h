@@ -53,6 +53,8 @@ extern const PMOD_t PMOD_A;
 extern const PMOD_t PMOD_B;
 extern const PMOD_t PMOD_C;
 
+extern const ULTRA_SOUND_t ULTRA_SOUND;
+
 void init_gpio(GPIO_TypeDef* GPIOx);
 void init_pmod(PMOD_t pmod);
 void set_pin_mode(GPIO_TypeDef* GPIOx, uint8_t pin, PIN_MODE mode);
@@ -60,7 +62,9 @@ void set_pin_pull(GPIO_TypeDef* GPIOx, uint8_t pin, PIN_PULL pull);
 void set_output_type(GPIO_TypeDef* GPIOx, uint8_t pin, PIN_OUTPUT_TYPE type);
 void write_pin(GPIO_TypeDef* GPIOx, uint8_t pin, PIN_VALUE value);
 uint8_t read_pin(GPIO_TypeDef* GPIOx, uint8_t pin);
-void init_gp_timer(TIM_TypeDef* TIMx, uint16_t freq, uint16_t arr);
+void toggle_pin(GPIO_TypeDef* GPIOx, uint8_t pin);
+void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint16_t arr);
+void init_timer_IRQ(TIM_TypeDef* TIMx, uint16_t priority);
 void init_ssd (uint16_t reload_time);
 void display_num(uint16_t num, uint8_t decimal_place);
 void init_ultrasound(void);
