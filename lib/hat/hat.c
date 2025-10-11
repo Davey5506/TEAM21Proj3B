@@ -116,6 +116,53 @@ uint8_t read_pin(GPIO_TypeDef* GPIOx, uint8_t pin){
     return (GPIOx->IDR >> pin) & 0x1;
 }
 
+void init_gp_timer(TIM_TypeDef* TIMx, uint16_t freq, uint16_t arr){
+    if(TIMx->CR1 & TIM_CR1_CEN){
+        return;
+    }
+    switch((int)TIMx){
+        case (int)TIM2:
+            RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+            break;
+        case (int)TIM3:
+            RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+            break;
+        case (int)TIM4:
+            RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
+            break;
+        case (int)TIM5:
+            RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
+            break;
+        case (int)TIM9:
+            RCC->APB2ENR |= RCC_APB2ENR_TIM9EN;
+            break;
+        case (int)TIM10:
+            RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
+            break;
+        case (int)TIM11:
+            RCC->APB2ENR |= RCC_APB2ENR_TIM11EN;
+            break;
+        case (int)TIM12:
+            RCC->APB1ENR |= RCC_APB1ENR_TIM12EN;
+            break;
+        case (int)TIM13:
+            RCC->APB1ENR |= RCC_APB1ENR_TIM13EN;
+            break;
+        case (int)TIM14:
+            RCC->APB1ENR |= RCC_APB1ENR_TIM14EN;
+            break;
+        default:
+            break;
+    }
+
+    TIMx->PSC = (SYSTEM_FREQ / freq) - 1;
+    TIMx->ARR = arr - 1;
+    TIMx->DIER |= TIM_DIER_UIE;
+    TIMx->CNT = 0;
+    TIMx->CR1 |= TIM_CR1_CEN;
+    return;
+}
+
 void init_ssd( uint16_t reload_time){
     for(int i = 0; i < 3; i++){
         init_gpio(SSD.GPIO_PORTS[i]);
@@ -149,9 +196,8 @@ void init_ultrasound(void){
     set_pin_mode(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, OUTPUT);
     init_gpio(ULTRA_SOUND.ECHO_PORT);
     set_pin_mode(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, INPUT);
-    
-
 }
+
 
 // local functions
 void select_active_digit(void){
