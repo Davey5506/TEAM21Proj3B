@@ -57,6 +57,8 @@ extern const ULTRA_SOUND_t ULTRA_SOUND;
 
 void init_gpio(GPIO_TypeDef* GPIOx);
 void init_pmod(PMOD_t pmod);
+void init_usart(USART_TypeDef* USARTx, uint32_t baudrate);
+void send_char(USART_TypeDef* USARTx, char c);
 void set_pin_mode(GPIO_TypeDef* GPIOx, uint8_t pin, PIN_MODE mode);
 void set_pin_pull(GPIO_TypeDef* GPIOx, uint8_t pin, PIN_PULL pull);
 void set_output_type(GPIO_TypeDef* GPIOx, uint8_t pin, PIN_OUTPUT_TYPE type);
