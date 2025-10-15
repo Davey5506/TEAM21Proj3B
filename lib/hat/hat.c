@@ -1,4 +1,5 @@
 #include "hat.h"
+#include "stm32f4xx.h"
 
 const PMOD_t PMOD_A = {
     .GPIO_PORTS = {GPIOA, GPIOB, GPIOC, 0},
@@ -86,27 +87,15 @@ void init_pmod(PMOD_t pmod){
 }
 
 void init_usart(USART_TypeDef* USARTx, uint32_t baudrate){
-    switch((int)USARTx){
-        case (int)USART1:
-            RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
-            break;
-        case (int)USART2:
-            RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
-            break;
-        case (int)USART3:
-            RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
-            break;
-        case (int)UART4:
-            RCC->APB1ENR |= RCC_APB1ENR_UART4EN;
-            break;
-        case (int)UART5:
-            RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
-            break;
-        default:
-            break;
-    }
-    USARTx->BRR = SYSTEM_FREQ / baudrate;
-    USARTx->CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+    RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+    init_gpio(GPIOA);
+    set_pin_mode(GPIOA, 2, AF);
+    set_pin_mode(GPIOA, 3, AF);
+    GPIOA->AFR[0] |= (7 << (2 * 4)) | (7 << (3 * 4));
+    USART2->BRR = SystemCoreClock / baudrate;
+    USART2->CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+
+    return;
 }
 
 void send_char(USART_TypeDef* USARTx, char c){
@@ -190,7 +179,10 @@ void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint16_t arr){
             break;
     }
 
-    TIMx->PSC = (SYSTEM_FREQ / freq) - 1;
+    // For F446RE @ 180MHz, APB1 timers run at 90MHz.
+    // We will assume this is an APB1 timer for this general purpose function.
+    // A more robust solution would determine the bus from TIMx.
+    TIMx->PSC = (90000000 / freq) - 1;
     TIMx->ARR = arr - 1;
     TIMx->CNT = 0;
     TIMx->CR1 |= TIM_CR1_CEN;
@@ -203,6 +195,15 @@ void init_timer_IRQ(TIM_TypeDef* TIMx, uint16_t priority){
         case (int)TIM2:
             NVIC_EnableIRQ(TIM2_IRQn);
             NVIC_SetPriority(TIM2_IRQn, priority);
+            break;
+        case (int)TIM3:
+            // Configure Channel 3 for Input Capture
+            TIM3->CCMR2 |= TIM_CCMR2_CC3S_0;   // 01: CC3 channel is configured as input, IC3 is mapped on TI3
+            TIM3->CCER |= TIM_CCER_CC3P;      // Capture on falling edge by default (we will flip to rising in ISR)
+            TIM3->CCER &= ~TIM_CCER_CC3E;     // Disable capture on channel 3 initially
+            TIM3->DIER |= TIM_DIER_CC3IE;     // Enable Capture/Compare 3 interrupt
+
+            // Enable the main TIM3 IRQ
             break;
         case (int)TIM3:
             NVIC_EnableIRQ(TIM3_IRQn);
@@ -258,7 +259,9 @@ void init_ssd( uint16_t reload_time){
 
     RCC->APB1ENR |= RCC_APB1ENR_TIM7EN;
     TIM7->DIER |= TIM_DIER_UIE;
-    TIM7->PSC = SYSTEM_FREQ / (160000 - 1);
+    // For F446RE @ 180MHz, APB1 timers (like TIM7) run at 90MHz.
+    // To get a ~1ms tick for the reload_time, we can use a prescaler.
+    TIM7->PSC = 90000 - 1; // 90MHz / 90000 = 1kHz (1ms period)
     TIM7->ARR = reload_time;
     NVIC_EnableIRQ(TIM7_IRQn);
     NVIC_SetPriority(TIM7_IRQn, 20); 
@@ -279,7 +282,9 @@ void init_ultrasound(void){
     write_pin(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, LOW);
 
     init_gpio(ULTRA_SOUND.ECHO_PORT);
-    set_pin_mode(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, INPUT);
+    set_pin_mode(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, AF);
+    // PB0 is TIM3_CH3, which is AF2
+    ULTRA_SOUND.ECHO_PORT->AFR[0] |= (2 << (ULTRA_SOUND.ECHO_PIN * 4)); 
     set_pin_pull(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, PULL_DOWN);
 }
 
@@ -319,22 +324,22 @@ void select_active_digit(void){
 void TIM7_IRQHandler(void){
     TIM7->SR &= ~TIM_SR_UIF;
 
-    // Clear previous digit
-    for(int i = 0; i < 8; i++){
-        write_pin(SSD.DATA_PIN_PORTS[i], SSD.DATA_PINs[i], 0);
-    }
-    write_pin(SSD.DATA_PIN_PORTS[7], SSD.DATA_PINs[7], 0);
+    // Turn off all digits to prevent ghosting
+    write_pin(SSD.SELECT_PIN_PORTS[0], SSD.SELECT_PINs[0], HIGH);
+    write_pin(SSD.SELECT_PIN_PORTS[1], SSD.SELECT_PINs[1], HIGH);
+    write_pin(SSD.SELECT_PIN_PORTS[2], SSD.SELECT_PINs[2], HIGH);
+    write_pin(SSD.SELECT_PIN_PORTS[3], SSD.SELECT_PINs[3], HIGH);
 
-    // Select active digit
+    // Select active digit and rotate for next interrupt
     select_active_digit();
 
-    // Rotate active digit
-    active_digit = (active_digit + 1) % 4;
-
     // Write ssd_out to GPIO
+    uint8_t current_digit_pattern = ssd_out[active_digit];
     for(int i = 0; i < 8; i++){
-        write_pin(SSD.DATA_PIN_PORTS[i], SSD.DATA_PINs[i], ssd_out[active_digit] >> (i+1) & 1);
+        // The bit order in your `digits` array seems to be (DP, G, F, E, D, C, B, A)
+        // We will assume bit 0 is DP, bit 1 is A, etc.
+        write_pin(SSD.DATA_PIN_PORTS[i], SSD.DATA_PINs[i], (current_digit_pattern >> (i+1)) & 1);
     }
-    write_pin(SSD.DATA_PIN_PORTS[7], SSD.DATA_PINs[7], ssd_out[active_digit] & 1);
+    active_digit = (active_digit + 1) % 4; // Move to next digit for the next interrupt
     return;
 }
