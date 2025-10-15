@@ -196,12 +196,6 @@ void init_timer_IRQ(TIM_TypeDef* TIMx, uint16_t priority){
             NVIC_SetPriority(TIM2_IRQn, priority);
             break;
         case (int)TIM3:
-            // Configure Channel 3 for Input Capture
-            TIM3->CCMR2 |= TIM_CCMR2_CC3S_0;   // 01: CC3 channel is configured as input, IC3 is mapped on TI3
-            TIM3->CCER |= TIM_CCER_CC3P;      // Capture on falling edge by default (we will flip to rising in ISR)
-            TIM3->CCER &= ~TIM_CCER_CC3E;     // Disable capture on channel 3 initially
-            TIM3->DIER |= TIM_DIER_CC3IE;     // Enable Capture/Compare 3 interrupt
-            // Enable TIM3 interrupt in NVIC
             NVIC_EnableIRQ(TIM3_IRQn);
             NVIC_SetPriority(TIM3_IRQn, priority);
             break;
