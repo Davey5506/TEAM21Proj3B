@@ -5,7 +5,7 @@ void TIM3_IRQHandler(void){
 
 int main() {
     init_usart(USART2, 9600);
-    init_ssd(500);
+    init_ssd(10);
     display_num(0, 2);
     init_ultrasound();
     init_gp_timer(TIM3, 1000000, 4000);
