@@ -1,5 +1,4 @@
 #include "hat.h"
-#include "stm32f4xx.h"
 
 const PMOD_t PMOD_A = {
     .GPIO_PORTS = {GPIOA, GPIOB, GPIOC, 0},
