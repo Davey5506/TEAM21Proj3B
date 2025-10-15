@@ -85,7 +85,7 @@ void init_pmod(PMOD_t pmod){
     }
 }
 
-void init_usart(USART_TypeDef* USARTx, uint32_t baudrate){
+void init_usart(uint32_t baudrate){
     RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
     init_gpio(GPIOA);
     set_pin_mode(GPIOA, 2, AF);
@@ -265,7 +265,7 @@ void display_num(uint16_t num, uint8_t decimal_place){
 
 void init_ultrasound(void){
     init_gpio(ULTRA_SOUND.TRIG_PORT);
-    set_pin_mode(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, OUTPUT);
+    ULTRA_SOUND.TRIG_PORT->AFR[0] |= (2 << (ULTRA_SOUND.TRIG_PIN * 4)); // PA4 is TIM3_CH2, which is AF2
     write_pin(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, LOW);
 
     init_gpio(ULTRA_SOUND.ECHO_PORT);
@@ -275,7 +275,14 @@ void init_ultrasound(void){
     set_pin_pull(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, PULL_DOWN);
 }
 
-
+void int_to_string(int num, char* str, uint16_t len){
+    str[len - 1] = '\0';
+    len--;
+    while(num / 10){
+        str[len--] = (num % 10) + '0';
+        num /= 10;
+    }
+}
 // local functions
 void select_active_digit(void){
     switch(active_digit){
