@@ -139,7 +139,7 @@ void toggle_pin(GPIO_TypeDef* GPIOx, uint8_t pin){
     return;
 }
 
-void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint16_t arr){
+void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint16_t arr, uint8_t enable){
     if(TIMx->CR1 & TIM_CR1_CEN){
         return;
     }
@@ -178,13 +178,12 @@ void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint16_t arr){
             break;
     }
 
-    // For F446RE @ 180MHz, APB1 timers run at 90MHz.
-    // We will assume this is an APB1 timer for this general purpose function.
-    // A more robust solution would determine the bus from TIMx.
-    TIMx->PSC = (90000000 / freq) - 1;
+    TIMx->PSC = (SYSTEM_FREQ / freq) - 1;
     TIMx->ARR = arr - 1;
     TIMx->CNT = 0;
-    TIMx->CR1 |= TIM_CR1_CEN;
+    if(enable){
+        TIMx->CR1 |= TIM_CR1_CEN;
+    }
     return;
 }
 
