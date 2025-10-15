@@ -251,7 +251,7 @@ void init_ssd(uint16_t reload_time){
     TIM7->PSC = (SYSTEM_FREQ / 10000) - 1;
     TIM7->ARR = reload_time;
     NVIC_EnableIRQ(TIM7_IRQn);
-    NVIC_SetPriority(TIM7_IRQn, 20); 
+    NVIC_SetPriority(TIM7_IRQn, 1); 
     TIM7->CR1 |= TIM_CR1_CEN;
 }
 
