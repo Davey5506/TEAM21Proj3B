@@ -1,6 +1,33 @@
 #include "hat.h"
 uint16_t pulse_duration = 0;
+uint16_t rise_time = 0;
+uint16_t fall_time = 0;
+uint8_t is_first_capture = 1;
+
 void TIM3_IRQHandler(void){
+    if(TIM3->SR & TIM_SR_CC1IF){
+        TIM3->SR &= ~TIM_SR_CC1IF;
+        if(is_first_capture){
+            rise_time = TIM3->CCR1;
+            is_first_capture = !is_first_capture;
+        }else{
+            fall_time = TIM3->CCR1;
+            if(fall_time > rise_time){
+                pulse_duration = fall_time - rise_time;
+            }else{
+                pulse_duration = (0xFFFFU - rise_time) + fall_time;
+            }
+            is_first_capture = !is_first_capture;
+            display_num(pulse_duration / 58, 2); // Convert to cm and display
+            char str[5];
+            int_to_string(pulse_duration / 58, str, 5); 
+            int i = 0;
+            while(str[i] != '\0'){
+                send_char(USART2, str[i]);
+                i++;
+            }
+        }
+    }
 }
 
 int main() {
