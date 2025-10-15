@@ -242,7 +242,7 @@ void init_timer_IRQ(TIM_TypeDef* TIMx, uint16_t priority){
     }
 }
 
-void init_ssd( uint16_t reload_time){
+void init_ssd(uint16_t reload_time){
     for(int i = 0; i < 3; i++){
         init_gpio(SSD.GPIO_PORTS[i]);
     }
@@ -255,9 +255,7 @@ void init_ssd( uint16_t reload_time){
 
     RCC->APB1ENR |= RCC_APB1ENR_TIM7EN;
     TIM7->DIER |= TIM_DIER_UIE;
-    // For F446RE @ 180MHz, APB1 timers (like TIM7) run at 90MHz.
-    // To get a ~1ms tick for the reload_time, we can use a prescaler.
-    TIM7->PSC = 90000 - 1; // 90MHz / 90000 = 1kHz (1ms period)
+    TIM7->PSC = (SYSTEM_FREQ / 10000) - 1;
     TIM7->ARR = reload_time;
     NVIC_EnableIRQ(TIM7_IRQn);
     NVIC_SetPriority(TIM7_IRQn, 20); 
