@@ -1,7 +1,7 @@
 #ifndef HAT_H
 #define HAT_H
 
-#include "stm32f446xx.h"
+#include "stm32f4xx.h"
 #define SYSTEM_FREQ 16000000U
 
 typedef struct{
