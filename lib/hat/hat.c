@@ -139,6 +139,13 @@ void toggle_pin(GPIO_TypeDef* GPIOx, uint8_t pin){
     return;
 }
 
+void init_sys_tick(uint32_t ticks){
+    SysTick->LOAD = ticks - 1;
+    SysTick->VAL = 0;
+    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+    return;
+}
+
 void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint16_t arr, uint8_t enable){
     if(TIMx->CR1 & TIM_CR1_CEN){
         return;
