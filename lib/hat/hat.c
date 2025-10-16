@@ -146,13 +146,13 @@ void init_sys_tick(uint32_t ticks){
     return;
 }
 
-void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint32_t arr, uint8_t enable){
+void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint32_t arr){
     if(TIMx->CR1 & TIM_CR1_CEN){
         return;
     }
     switch((int)TIMx){
         case (int)TIM2:
-            RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+            RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
             break;
         case (int)TIM3:
             RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
