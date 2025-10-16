@@ -263,11 +263,18 @@ void init_ssd( uint16_t reload_time){
 }
 
 void display_num(uint16_t num, uint8_t decimal_place){
+    uint16_t temp_num = num;
     for(int i = 0; i < 4; i++){
-        ssd_out[i] = digits[num % 10];
-        num /= 10;
+        uint8_t digit = temp_num % 10;
+        if (i > 0 && num < (i == 1 ? 10 : (i == 2 ? 100 : 1000))) {
+            // Blank leading zeros, but always show the first digit (i=0)
+            ssd_out[i] = 0;
+        } else {
+            ssd_out[i] = digits[digit];
+        }
+        temp_num /= 10;
     }
-    ssd_out[decimal_place] |= 1;
+    if (decimal_place < 4) ssd_out[decimal_place] |= 1;
 }
 
 void init_ultrasound(void){
