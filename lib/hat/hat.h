@@ -53,7 +53,7 @@ extern const PMOD_t PMOD_A;
 extern const PMOD_t PMOD_B;
 extern const PMOD_t PMOD_C;
 
-extern const ULTRA_SOUND_t ULTRA_SOUND;
+extern volatile const ULTRA_SOUND_t ULTRA_SOUND;
 
 void init_gpio(GPIO_TypeDef* GPIOx);
 void init_pmod(PMOD_t pmod);
