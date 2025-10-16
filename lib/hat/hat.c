@@ -16,14 +16,14 @@ const PMOD_t PMOD_C = {
     .PIN_NUMS = {0, 1, 2, 3, 0xFF, 0xFF, 0xFF, 0xFF}
 };
 
-const ULTRA_SOUND_t ULTRA_SOUND = {
+volatile const ULTRA_SOUND_t ULTRA_SOUND = {
     .TRIG_PORT = GPIOA,
     .TRIG_PIN = 4,
     .ECHO_PORT = GPIOB,
     .ECHO_PIN = 0
 };
 
-SSD_t SSD = {
+volatile const SSD_t SSD = {
     .GPIO_PORTS = {GPIOA, GPIOB, GPIOC},
     .DATA_PIN_PORTS = {GPIOB, GPIOA, GPIOB, GPIOB, GPIOB, GPIOB, GPIOA, GPIOB},
     .DATA_PINs = {10, 9, 13, 14, 4, 1, 10, 5},
@@ -31,7 +31,7 @@ SSD_t SSD = {
     .SELECT_PINs = {2, 8, 15, 4},
 };
 
-const uint8_t digits[10] = {
+volatile const uint8_t digits[10] = {
     0b01111110, // 0 (A,B,C,D,E,F)
     0b00001100, // 1 (B,C)
     0b10110110, // 2 (A,B,D,E,G)
@@ -43,8 +43,8 @@ const uint8_t digits[10] = {
     0b11111110, // 8 (A,B,C,D,E,F,G)
     0b11011110  // 9 (A,B,C,D,F,G)
 };
-uint8_t ssd_out[4] = {0, 0, 0, 0};
-uint8_t active_digit = 0;
+volatile uint8_t ssd_out[4] = {0, 0, 0, 0};
+volatile uint8_t active_digit = 0;
 
 void init_gpio(GPIO_TypeDef* GPIOx){
     switch((unsigned int)GPIOx){
@@ -146,7 +146,7 @@ void init_sys_tick(uint32_t ticks){
     return;
 }
 
-void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint16_t arr, uint8_t enable){
+void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint32_t arr, uint8_t enable){
     if(TIMx->CR1 & TIM_CR1_CEN){
         return;
     }
@@ -186,7 +186,7 @@ void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint16_t arr, uint8_t enabl
     }
 
     TIMx->PSC = (SYSTEM_FREQ / freq) - 1;
-    TIMx->ARR = arr - 1;
+    TIMx->ARR = arr;
     TIMx->CNT = 0;
     if(enable){
         TIMx->CR1 |= TIM_CR1_CEN;
@@ -242,7 +242,7 @@ void init_timer_IRQ(TIM_TypeDef* TIMx, uint16_t priority){
     }
 }
 
-void init_ssd(uint16_t reload_time){
+void init_ssd( uint16_t reload_time){
     for(int i = 0; i < 3; i++){
         init_gpio(SSD.GPIO_PORTS[i]);
     }
@@ -255,10 +255,10 @@ void init_ssd(uint16_t reload_time){
 
     RCC->APB1ENR |= RCC_APB1ENR_TIM7EN;
     TIM7->DIER |= TIM_DIER_UIE;
-    TIM7->PSC = (SYSTEM_FREQ / 10000) - 1;
+    TIM7->PSC = SYSTEM_FREQ / (160000 - 1);
     TIM7->ARR = reload_time;
     NVIC_EnableIRQ(TIM7_IRQn);
-    NVIC_SetPriority(TIM7_IRQn, 1); 
+    NVIC_SetPriority(TIM7_IRQn, 20); 
     TIM7->CR1 |= TIM_CR1_CEN;
 }
 
@@ -272,13 +272,11 @@ void display_num(uint16_t num, uint8_t decimal_place){
 
 void init_ultrasound(void){
     init_gpio(ULTRA_SOUND.TRIG_PORT);
-    ULTRA_SOUND.TRIG_PORT->AFR[0] |= (2 << (ULTRA_SOUND.TRIG_PIN * 4)); // PA4 is TIM3_CH2, which is AF2
+    set_pin_mode(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, OUTPUT);
     write_pin(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, LOW);
 
     init_gpio(ULTRA_SOUND.ECHO_PORT);
-    set_pin_mode(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, AF);
-    // PB0 is TIM3_CH3, which is AF2
-    ULTRA_SOUND.ECHO_PORT->AFR[0] |= (2 << (ULTRA_SOUND.ECHO_PIN * 4)); 
+    set_pin_mode(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, INPUT);
     set_pin_pull(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, PULL_DOWN);
 }
 
@@ -325,22 +323,22 @@ void select_active_digit(void){
 void TIM7_IRQHandler(void){
     TIM7->SR &= ~TIM_SR_UIF;
 
-    // Turn off all digits to prevent ghosting
-    write_pin(SSD.SELECT_PIN_PORTS[0], SSD.SELECT_PINs[0], HIGH);
-    write_pin(SSD.SELECT_PIN_PORTS[1], SSD.SELECT_PINs[1], HIGH);
-    write_pin(SSD.SELECT_PIN_PORTS[2], SSD.SELECT_PINs[2], HIGH);
-    write_pin(SSD.SELECT_PIN_PORTS[3], SSD.SELECT_PINs[3], HIGH);
+    // Clear previous digit
+    for(int i = 0; i < 8; i++){
+        write_pin(SSD.DATA_PIN_PORTS[i], SSD.DATA_PINs[i], 0);
+    }
+    write_pin(SSD.DATA_PIN_PORTS[7], SSD.DATA_PINs[7], 0);
 
-    // Select active digit and rotate for next interrupt
+    // Select active digit
     select_active_digit();
 
+    // Rotate active digit
+    active_digit = (active_digit + 1) % 4;
+
     // Write ssd_out to GPIO
-    uint8_t current_digit_pattern = ssd_out[active_digit];
     for(int i = 0; i < 8; i++){
-        // The bit order in your `digits` array seems to be (DP, G, F, E, D, C, B, A)
-        // We will assume bit 0 is DP, bit 1 is A, etc.
-        write_pin(SSD.DATA_PIN_PORTS[i], SSD.DATA_PINs[i], (current_digit_pattern >> (i+1)) & 1);
+        write_pin(SSD.DATA_PIN_PORTS[i], SSD.DATA_PINs[i], ssd_out[active_digit] >> (i+1) & 1);
     }
-    active_digit = (active_digit + 1) % 4; // Move to next digit for the next interrupt
+    write_pin(SSD.DATA_PIN_PORTS[7], SSD.DATA_PINs[7], ssd_out[active_digit] & 1);
     return;
 }
