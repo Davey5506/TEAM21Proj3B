@@ -285,14 +285,6 @@ void init_ultrasound(void){
     set_pin_pull(ULTRA_SOUND.ECHO_PORT, ULTRA_SOUND.ECHO_PIN, PULL_DOWN);
 }
 
-void int_to_string(int num, char* str, uint16_t len){
-    str[len - 1] = '\0';
-    len--;
-    while(num / 10){
-        str[len--] = (num % 10) + '0';
-        num /= 10;
-    }
-}
 // local functions
 void select_active_digit(void){
     switch(active_digit){
