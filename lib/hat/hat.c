@@ -334,7 +334,6 @@ void TIM7_IRQHandler(void){
     for(int i = 0; i < 8; i++){
         write_pin(SSD.DATA_PIN_PORTS[i], SSD.DATA_PINs[i], 0);
     }
-    write_pin(SSD.DATA_PIN_PORTS[7], SSD.DATA_PINs[7], 0);
 
     // Select active digit
     select_active_digit();
