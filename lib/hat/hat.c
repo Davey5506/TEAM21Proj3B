@@ -188,9 +188,7 @@ void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint32_t arr){
     TIMx->PSC = (SYSTEM_FREQ / freq) - 1;
     TIMx->ARR = arr;
     TIMx->CNT = 0;
-    if(enable){
         TIMx->CR1 |= TIM_CR1_CEN;
-    }
     return;
 }
 
