@@ -1,64 +1,95 @@
 #include "hat.h"
-uint16_t pulse_duration = 0;
-uint16_t rise_time = 0;
-uint16_t fall_time = 0;
-uint8_t is_first_capture = 1;
+#include <stdio.h>
+volatile float distance = 0.0;
+volatile uint32_t pulse_duration = 0;
+volatile uint32_t rise_time = 0;
+volatile uint32_t fall_time = 0;
+volatile uint8_t new_data_ready = 0;
+volatile uint8_t unit = 0; // 0 for cm, 1 for inches
 
-void TIM3_IRQHandler(void){
-    if(TIM3->SR & TIM_SR_CC1IF){
-        TIM3->SR &= ~TIM_SR_CC1IF;
-        if(is_first_capture){
-            rise_time = TIM3->CCR1;
-            is_first_capture = !is_first_capture;
+void delay_us(uint32_t us){
+    uint32_t start = SysTick->VAL;
+    uint32_t ticks = (SYSTEM_FREQ / 1000000) * us;
+    while((SysTick->VAL - start) < ticks);
+    return;
+}
+
+void SysTick_Handler(void){
+    write_pin(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, HIGH);
+    delay_us(10);
+    write_pin(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, LOW);
+}
+void EXTI0_IRQHandler(void){
+    if(EXTI->PR & EXTI_PR_PR0){
+        if(ULTRA_SOUND.ECHO_PORT->IDR & (1 << ULTRA_SOUND.ECHO_PIN)){
+            rise_time = TIM2->CNT;
         }else{
-            fall_time = TIM3->CCR1;
-            if(fall_time > rise_time){
-                pulse_duration = fall_time - rise_time;
-            }else{
-                pulse_duration = (0xFFFFU - rise_time) + fall_time;
-            }
-            is_first_capture = !is_first_capture;
-            display_num(pulse_duration / 58, 2); // Convert to cm and display
-            char str[5];
-            int_to_string(pulse_duration / 58, str, 5); 
-            int i = 0;
-            while(str[i] != '\0'){
-                send_char(USART2, str[i]);
-                i++;
-            }
+            fall_time = TIM2->CNT;
+            pulse_duration = (fall_time >= rise_time) ? (fall_time - rise_time) : (0xFFFFFFFF - rise_time + fall_time + 1);
+            pulse_duration /= 16; // convert to microseconds
+            distance = unit ?  ((pulse_duration) / 148.0) : ((pulse_duration) / 58.0); // in cm
+            new_data_ready = 1; // Set a flag to process data in the main loop
         }
+        EXTI->PR |= EXTI_PR_PR0;
+    }
+    return;
+}
+void EXTI15_10_IRQHandler(void){
+    if(EXTI->PR & EXTI_PR_PR13){
+        // User button pressed, can implement any functionality here
+        EXTI->PR |= EXTI_PR_PR13;
+        unit = !unit;
     }
 }
 
 int main() {
-    init_usart(9600);
+    init_usart(115200);
     init_ssd(10);
-    display_num(0, 2);
+    display_num(0, 0);
     init_ultrasound();
+    init_sys_tick(8000000); // 500ms period
+    init_gp_timer(TIM2, 1000000, 0xFFFFFFFF); // 1MHz timer for microsecond precision
     
-    init_gp_timer(TIM3, 1000000, 9999, 0); // 1 MHz, max count 9999 (10ms period), do not start yet
-    
-    // Configure TIM3 Channel 1 for Input Capture
-    TIM3->CCMR2 &= ~TIM_CCMR2_CC3S;   // Clear CC1S bits
-    TIM3->CCMR2 |= TIM_CCMR2_CC3S_0;  // CC1S = 01: CC1 channel is configured as input, IC1 is mapped on TI1
-    TIM3->CCER &= ~(TIM_CCER_CC3P | TIM_CCER_CC3NP); // Clear polarity bits
-    TIM3->CCER |= TIM_CCER_CC3P | TIM_CCER_CC3NP;    // Capture on both rising and falling edges
-    TIM3->CCER |= TIM_CCER_CC3E;      // Enable capture on channel 1
-    TIM3->DIER |= TIM_DIER_CC3IE; // Enable Capture/Compare 1 interrupt
+    // Configure EXTI for ultrasound echo pin (PB0)
+    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable SYSCFG clock
+    SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PB; // EXTI0 from PB0
+    EXTI->IMR |= EXTI_IMR_IM0; // unmask EXTI0
+    EXTI->RTSR |= EXTI_RTSR_TR0; // rising edge trigger
+    EXTI->FTSR |= EXTI_FTSR_TR0; // falling edge trigger
+    NVIC_EnableIRQ(EXTI0_IRQn);
+    NVIC_SetPriority(EXTI0_IRQn, 0);
 
-    // Configure TIM3 Channel 2 for PWM Output (Trigger Pulse)
-    TIM3->CCMR1 &= ~TIM_CCMR1_CC2S;   // CC2S = 00: CC2 channel is configured as output
-    TIM3->CCMR1 |= (6 << TIM_CCMR1_OC2M_Pos); // OC2M = 110: PWM mode 1
-    TIM3->CCMR1 |= TIM_CCMR1_OC2PE; // Enable preload for CCR2
-    TIM3->CCR2 = 15; // 10us pulse width (10 counts at 1MHz)
-    TIM3->CCER |= TIM_CCER_CC2E; // Enable output on channel 2
+    // Configure user buttom (PC13)
+    set_pin_mode(GPIOC, 13, INPUT);
+    set_pin_pull(GPIOC, 13, PULL_UP);
+    SYSCFG->EXTICR[3] |= SYSCFG_EXTICR4_EXTI13_PC; // EXTI13 from PC13
+    EXTI->IMR |= EXTI_IMR_IM13; // unmask EXTI13
+    EXTI->FTSR |= EXTI_FTSR_TR13; // falling edge trigger
+    NVIC_EnableIRQ(EXTI15_10_IRQn);
+    NVIC_SetPriority(EXTI15_10_IRQn, 1);
 
-    // Enable TIM3 interrupt in NVIC
-    //init_timer_IRQ(TIM3, 2); // Set a priority for TIM3 interrupts
+    while(1){
+        if (new_data_ready) {
+            // Safely read volatile variables
+            float current_distance = distance;
+            uint32_t current_pulse_duration = pulse_duration;
 
-    // Start the timer
-    //TIM3->CR1 |= TIM_CR1_CEN;
-
-    while(1){};
+            if(current_distance > 99.99){
+                display_num(9999, 2);
+            }else{
+                display_num((uint16_t)(current_distance*100), 2);
+            }
+            char str[40];
+            if(unit){
+                sprintf(str, "Dist: %.2fin\tWidth: %lu\tTIM2: %lu\r\n", current_distance, current_pulse_duration, TIM2->CNT);
+            }else{
+                sprintf(str, "Dist: %.2fcm\tWidth: %lu\tTIM2: %lu\r\n", current_distance, current_pulse_duration, TIM2->CNT);
+            }
+            for(int i = 0; str[i] != '\0'; i++) {
+                send_char(USART2, str[i]);
+            }
+            new_data_ready = 0; // Clear the flag
+        }
+    };
     return 0;
 }
