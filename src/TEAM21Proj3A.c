@@ -80,9 +80,9 @@ int main() {
             }
             char str[40];
             if(unit){
-                sprintf(str, "Dist: %.2fin\tWidth: %lu\tTIM2: %lu\r\n", current_distance, current_pulse_duration, TIM2->CNT);
+                sprintf(str, "Dist: %.2fin\r\n", current_distance);
             }else{
-                sprintf(str, "Dist: %.2fcm\tWidth: %lu\tTIM2: %lu\r\n", current_distance, current_pulse_duration, TIM2->CNT);
+                sprintf(str, "Dist: %.2fcm\r\n", current_distance);
             }
             for(int i = 0; str[i] != '\0'; i++) {
                 send_char(USART2, str[i]);
