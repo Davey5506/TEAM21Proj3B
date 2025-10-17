@@ -72,7 +72,6 @@ int main() {
         if (new_data_ready) {
             // Safely read volatile variables
             float current_distance = distance;
-            uint32_t current_pulse_duration = pulse_duration;
 
             if(current_distance > 99.99){
                 display_num(9999, 2);
