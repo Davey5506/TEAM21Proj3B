@@ -48,6 +48,19 @@ void servo_angle_set(int angle){
     TIM8->CCR1= pulse_width;
 }
 
+void PWM_Output_PC6_Init(void){
+    TIM8->PSC= (SYSTEM_FREQ / 1000000) - 1; // 1MHz timer
+    TIM8->ARR= 19999;
+    TIM8->CCMR1 &= ~(TIM_CCMR1_OC1M);
+    TIM8->CCMR1 |= (6 << TIM_CCMR1_OC1M_Pos); // PWM mode 1
+    TIM8->CCMR1 |= TIM_CCMR1_OC1PE; // Pre
+    TIM8->CCER |= TIM_CCER_CC1E; // Enable output
+    TIM8->CR1 |= TIM_CR1_CEN; // Enable timer
+    TIM8->EGR = TIM_EGR_UG;
+    TIM8->CR1 |= TIM_CR1_CEN;
+
+}
+
 int main() {
     SERVO_t ultrasound_servo = {
         .SERVO_PIN_PORT = GPIOC,
@@ -64,7 +77,6 @@ int main() {
     init_sys_tick(8000000); // 500ms period
     init_gp_timer(TIM2, 1000000, 0xFFFFFFFF, 1); // 1MHz timer for microsecond precision
     init_gp_timer(TIM8, 1000000, 0xFFFFFFFF, 0); // 1MHz timer for microsecond precision
-    
     // Configure EXTI for ultrasound echo pin (PB0)
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable SYSCFG clock
     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PB; // EXTI0 from PB0
