@@ -97,6 +97,7 @@ int main() {
     while(1){
         for(int angle= -45; angle<= 45; angle += 5){
             servo_angle_set(angle);
+            delay_us(500000); // for .5s
 
         }
 
