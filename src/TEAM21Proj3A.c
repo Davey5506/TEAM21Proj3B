@@ -43,6 +43,12 @@ void EXTI15_10_IRQHandler(void){
 }
 
 int main() {
+    SERVO_t ultrasound_servo = {
+        .SERVO_PIN_PORT = GPIOC,
+        .SERVO_PWM_PIN = 6,
+        .SERVO_FEEDBACK_PIN = 0
+    };
+    init_servo(&ultrasound_servo);
     init_usart(115200);
     init_ssd(10);
     display_num(0, 0);
