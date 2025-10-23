@@ -26,6 +26,12 @@ typedef struct{
     uint8_t ECHO_PIN;
 }ULTRA_SOUND_t;
 
+typedef struct{
+    GPIO_TypeDef* SERVO_PIN_PORT;
+    uint8_t SERVO_PWM_PIN;
+    uint8_t SERVO_FEEDBACK_PIN;
+}SERVO_t;
+
 typedef enum{
     INPUT = 0U,
     OUTPUT = 1U,
@@ -73,6 +79,7 @@ void init_ssd (uint16_t reload_time);
 void display_num(uint16_t num, uint8_t decimal_place);
 void init_ultrasound(void);
 void int_to_string(int num, char* str, uint16_t len);
+void init_servo(SERVO_t* servo);
 
 
 #endif //HAT_H
