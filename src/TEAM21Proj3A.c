@@ -43,29 +43,21 @@ void EXTI15_10_IRQHandler(void){
     }
 }
 
+
 void servo_angle_set(int angle){
-    pulse_width= 1500 - (500 * (angle/45.0));
+    pulse_width= 1500 - (500 * (angle/45.0)); // map 0-180 to 2000-1000us
     TIM8->CCR1= pulse_width;
 }
 
-
-
 int main() {
-    SERVO_t ultrasound_servo = {
-        .SERVO_PIN_PORT = GPIOC,
-        .SERVO_PWM_PIN = 9,
-        .SERVO_FEEDBACK_PIN = 0
-    };
-    init_servo(&ultrasound_servo);
-
-
     init_usart(115200);
     init_ssd(10);
     display_num(0, 0);
     init_ultrasound();
     init_sys_tick(8000000); // 500ms period
-    init_gp_timer(TIM2, 1000000, 0xFFFFFFFF, 1); // 1MHz timer for microsecond precision
-    init_gp_timer(TIM8, 1000000, 0xFFFFFFFF, 0); // 1MHz timer for microsecond precision
+    init_gp_timer(TIM2, 1000000, 0xFFFFFFFF); // 1MHz timer for microsecond precision
+    init_gp_timer(TIM8, 1000000, 0xFFFFFFFF); // 1MHz timer for microsecond precision
+    
     // Configure EXTI for ultrasound echo pin (PB0)
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable SYSCFG clock
     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PB; // EXTI0 from PB0
