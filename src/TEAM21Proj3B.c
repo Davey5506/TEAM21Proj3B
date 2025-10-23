@@ -28,6 +28,7 @@ void EXTI0_IRQHandler(void){
             fall_time = TIM2->CNT;
             pulse_duration = (fall_time >= rise_time) ? (fall_time - rise_time) : (0xFFFFFFFF - rise_time + fall_time + 1);
             pulse_duration /= 16; // convert to microseconds
+            pulse_width= pulse_duration; //to store echo pulse width
             distance = unit ?  ((pulse_duration) / 148.0) : ((pulse_duration) / 58.0); // in cm
             new_data_ready = 1; // Set a flag to process data in the main loop
         }
