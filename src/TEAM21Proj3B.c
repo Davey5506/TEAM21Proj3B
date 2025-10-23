@@ -48,8 +48,6 @@ void servo_angle_set(int angle){
     TIM8->CCR1= pulse_width;
 }
 
-
-
 int main() {
     SERVO_t ultrasound_servo = {
         .SERVO_PIN_PORT = GPIOC,
@@ -66,6 +64,7 @@ int main() {
     init_sys_tick(8000000); // 500ms period
     init_gp_timer(TIM2, 1000000, 0xFFFFFFFF, 1); // 1MHz timer for microsecond precision
     init_gp_timer(TIM8, 1000000, 0xFFFFFFFF, 0); // 1MHz timer for microsecond precision
+    
     // Configure EXTI for ultrasound echo pin (PB0)
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable SYSCFG clock
     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PB; // EXTI0 from PB0
