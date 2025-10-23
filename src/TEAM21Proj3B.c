@@ -56,9 +56,8 @@ void PWM_Output_PC6_Init(void){
     TIM8->CCMR1 |= TIM_CCMR1_OC1PE; // Pre
     TIM8->CCER |= TIM_CCER_CC1E; // Enable output
     TIM8->CR1 |= TIM_CR1_CEN; // Enable timer
-    TIM8->EGR = TIM_EGR_UG;
-    TIM8->CR1 |= TIM_CR1_CEN;
-
+    TIM8->EGR = TIM_EGR_UG;  
+    TIM8->CR1 |= TIM_CR1_CEN; 
 }
 
 int main() {
@@ -96,6 +95,11 @@ int main() {
     NVIC_SetPriority(EXTI15_10_IRQn, 1);
 
     while(1){
+        for(int angle= -45; angle<= 45; angle += 5){
+            servo_angle_set(angle);
+
+        }
+
         if (new_data_ready) {
             // Safely read volatile variables
             float current_distance = distance;
