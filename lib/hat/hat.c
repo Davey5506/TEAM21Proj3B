@@ -146,7 +146,7 @@ void init_sys_tick(uint32_t ticks){
     return;
 }
 
-void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint32_t arr){
+void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint32_t arr, uint8_t enable){
     if(TIMx->CR1 & TIM_CR1_CEN){
         return;
     }
@@ -188,7 +188,9 @@ void init_gp_timer(TIM_TypeDef* TIMx, uint32_t freq, uint32_t arr){
     TIMx->PSC = (SYSTEM_FREQ / freq) - 1;
     TIMx->ARR = arr;
     TIMx->CNT = 0;
-    TIMx->CR1 |= TIM_CR1_CEN;
+    if(enable){
+        TIMx->CR1 |= TIM_CR1_CEN;
+    }
     return;
 }
 
