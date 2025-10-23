@@ -49,14 +49,14 @@ int main() {
         .SERVO_FEEDBACK_PIN = 0
     };
     init_servo(&ultrasound_servo);
-    
+
 
     init_usart(115200);
     init_ssd(10);
     display_num(0, 0);
     init_ultrasound();
     init_sys_tick(8000000); // 500ms period
-    init_gp_timer(TIM2, 1000000, 0xFFFFFFFF); // 1MHz timer for microsecond precision
+    init_gp_timer(TIM2, 1000000, 0xFFFFFFFF, 1); // 1MHz timer for microsecond precision
     
     // Configure EXTI for ultrasound echo pin (PB0)
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable SYSCFG clock
