@@ -293,6 +293,13 @@ void int_to_string(int num, char* str, uint16_t len){
         num /= 10;
     }
 }
+
+void init_servo(SERVO_t* servo){
+    init_gpio(servo->SERVO_PIN_PORT);
+    set_pin_mode(servo->SERVO_PIN_PORT, servo->SERVO_PWM_PIN, AF);
+    servo->SERVO_PIN_PORT->AFR[servo->SERVO_PWM_PIN / 8] |= (2 << ((servo->SERVO_PWM_PIN % 8) * 4));
+}
+
 // local functions
 void select_active_digit(void){
     switch(active_digit){
