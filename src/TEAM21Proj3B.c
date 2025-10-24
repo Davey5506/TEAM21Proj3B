@@ -56,7 +56,6 @@ void EXTI0_IRQHandler(void){
             pulse_duration /= 16; // convert to microseconds
             pulse_width= pulse_duration; //to store echo pulse width
             distance = unit ?  ((pulse_duration) / 148.0) : ((pulse_duration) / 58.0); // in cm
-            new_data_ready = 1; // Set a flag to process data in the main loop
         }
         EXTI->PR |= EXTI_PR_PR0;
     }
