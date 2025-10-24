@@ -109,9 +109,7 @@ int main(){
     init_ultrasound();
     init_sys_tick(8000000); // 500ms period
     init_gp_timer(TIM2, 1000000, 0xFFFFFFFF, 1); // 1MHz timer for microsecond precision
-    init_gp_timer(TIM8, 1000000, 0xFFFFFFFF, 0); // 1MHz timer for microsecond precision
-    PWM_Output_PC6_Init();
-    TIM8->BDTR |= TIM_BDTR_MOE; // Main output enable for TIM8
+    PWM_Output_PC9_Init();
 
     // Configure EXTI for ultrasound echo pin (PB0)
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable SYSCFG clock
