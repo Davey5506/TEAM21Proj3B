@@ -135,8 +135,8 @@ int main(){
     while(1){
         for(int angle= -45; angle<= 45; angle += 5){
             servo_angle_set(angle);
-
-            for(volatile uint32_t i=0; i<1000000; i++); 
+            g_angle = angle;
+            for(volatile uint32_t i=0; i<500000; i++); 
             trigger_pulse();
         
 
@@ -167,8 +167,8 @@ int main(){
 
         for(int angle= 45; angle>= -45; angle -= 5){ //for reverse sweeping
             servo_angle_set(angle);
-
-            for(volatile uint32_t i=0; i<1000000; i++); 
+            g_angle = angle;
+            for(volatile uint32_t i=0; i<500000; i++); 
             trigger_pulse();
 
             if(new_data_ready){
