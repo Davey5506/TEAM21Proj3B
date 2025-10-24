@@ -138,29 +138,7 @@ int main(){
             g_angle = angle;
             for(volatile uint32_t i=0; i<500000; i++); 
             trigger_pulse();
-        
-
-            if (new_data_ready) {
-            // Safely read volatile variables
-                float current_distance = distance;
-
-                if(current_distance > 99.99){
-                    display_num(9999, 2);
-                }else{
-                    display_num((uint16_t)(current_distance*100), 2);
-                }
-                char str[100];
-                if(unit){
-                    sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fin\r\n", angle, pulse_width, current_distance);
-                }else{
-                    sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fcm\r\n", angle, pulse_width, current_distance);
-                }
-
-                for(int i = 0; str[i] != '\0'; i++) {
-                    send_char(USART2, str[i]);
-                }
-                new_data_ready = 0;
-            }
+            print_data();
         } 
 
         for(volatile uint32_t i=0; i<100000; i++); 
@@ -170,31 +148,9 @@ int main(){
             g_angle = angle;
             for(volatile uint32_t i=0; i<500000; i++); 
             trigger_pulse();
-
-            if(new_data_ready){
-                float current_distance = distance;
-
-                if(current_distance > 99.99){
-                    display_num(9999, 2);
-                }else{
-                    display_num((uint16_t)(current_distance*100), 2);
-                }
-
-                char str[100];
-                if(unit){
-
-                    sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fin\r\n", angle, pulse_width, current_distance);
-                }else{
-                    sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fcm\r\n", angle, pulse_width, current_distance);
-                }
-
-                for(int i = 0; str[i] != '\0'; i++) {
-                    send_char(USART2, str[i]);
-                }
-                new_data_ready = 0;
-            }
-            for(volatile uint32_t i=0; i<1000000; i++); //simple delay
+            print_data();
         }
+        for(volatile uint32_t i=0; i<100000; i++);
     }
     return 0;
 }
