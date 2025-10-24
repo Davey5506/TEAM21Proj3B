@@ -24,7 +24,7 @@ void trigger_pulse(void){ //sends a 10us pulse to the trigger pin
 void SysTick_Handler(void){
 
 }
-void EXTI0_IRQHandler(void){
+void EXTI0_IRQHandler(void){ 
     if(EXTI->PR & EXTI_PR_PR0){
         if(ULTRA_SOUND.ECHO_PORT->IDR & (1 << ULTRA_SOUND.ECHO_PIN)){
             rise_time = TIM2->CNT;
@@ -81,6 +81,8 @@ int main(){
     init_sys_tick(8000000); // 500ms period
     init_gp_timer(TIM2, 1000000, 0xFFFFFFFF, 1); // 1MHz timer for microsecond precision
     init_gp_timer(TIM8, 1000000, 0xFFFFFFFF, 0); // 1MHz timer for microsecond precision
+    TIM8->BDTR |= TIM_BDTR_MOE; // Main output enable for TIM8
+    
     // Configure EXTI for ultrasound echo pin (PB0)
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable SYSCFG clock
     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PB; // EXTI0 from PB0
