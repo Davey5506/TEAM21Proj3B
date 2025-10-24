@@ -163,7 +163,7 @@ int main(){
             }
         } 
 
-        for(volatile uint32_t i=0; i<1000000; i++); 
+        for(volatile uint32_t i=0; i<100000; i++); 
 
         for(int angle= 45; angle>= -45; angle -= 5){ //for reverse sweeping
             servo_angle_set(angle);
