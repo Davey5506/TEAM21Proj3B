@@ -74,16 +74,25 @@ void servo_angle_set(int angle){
     TIM8->CCR4= pulse_width;
 }
 
-void PWM_Output_PC6_Init(void){
-    TIM8->PSC= (SYSTEM_FREQ / 1000000) - 1; // 1MHz timer
+void PWM_Output_PC9_Init(void){
+    RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
+    TIM8->CR1 &= ~TIM_CR1_CEN;    
+    // 2. Set Timer Frequency (1MHz clock, 20ms period)
+    TIM8->PSC= (SYSTEM_FREQ / 1000000) - 1;
     TIM8->ARR= 19999;
-    TIM8->CCMR1 &= ~(TIM_CCMR1_OC1M);
-    TIM8->CCMR1 |= (6 << TIM_CCMR1_OC1M_Pos); // PWM mode 1
-    TIM8->CCMR1 |= TIM_CCMR1_OC1PE; // Pre
-    TIM8->CCER |= TIM_CCER_CC1E; // Enable output
-    TIM8->CR1 |= TIM_CR1_CEN; // Enable timer
-    TIM8->EGR = TIM_EGR_UG;  
-    TIM8->CR1 |= TIM_CR1_CEN; 
+
+    // 3. Configure TIM8 Channel 4 for PWM Mode 1
+    TIM8->CCMR2 &= ~(TIM_CCMR2_OC4M);
+    TIM8->CCMR2 |= (6 << TIM_CCMR2_OC4M_Pos);
+    TIM8->CCMR2 |= TIM_CCMR2_OC4PE;
+    
+    // 4. Enable Output and Main Output Enable
+    TIM8->CCER |= TIM_CCER_CC4E;
+    TIM8->BDTR |= TIM_BDTR_MOE;
+
+    TIM8->CNT = 0;
+    TIM8->EGR = TIM_EGR_UG;
+    TIM8->CR1 |= TIM_CR1_CEN;
 }
 
 int main(){
