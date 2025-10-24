@@ -15,10 +15,14 @@ void delay_us(uint32_t us){
     return;
 }
 
-void SysTick_Handler(void){
+void trigger_pulse(void){ //sends a 10us pulse to the trigger pin
     write_pin(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, HIGH);
     delay_us(10);
     write_pin(ULTRA_SOUND.TRIG_PORT, ULTRA_SOUND.TRIG_PIN, LOW);
+}
+
+void SysTick_Handler(void){
+
 }
 void EXTI0_IRQHandler(void){
     if(EXTI->PR & EXTI_PR_PR0){
@@ -61,8 +65,8 @@ void PWM_Output_PC6_Init(void){
     TIM8->CR1 |= TIM_CR1_CEN; 
 }
 
-int main() {
-    SERVO_t ultrasound_servo = {
+int main(){
+    SERVO_t ultrasound_servo= {
         .SERVO_PIN_PORT = GPIOC,
         .SERVO_PWM_PIN = 9,
         .SERVO_FEEDBACK_PIN = 0
@@ -95,15 +99,49 @@ int main() {
     NVIC_EnableIRQ(EXTI15_10_IRQn);
     NVIC_SetPriority(EXTI15_10_IRQn, 1);
 
+    servo_angle_set(0);
+    for(volatile uint32_t i=0; i<1000000; i++);
+
     while(1){
         for(int angle= -45; angle<= 45; angle += 5){
             servo_angle_set(angle);
-            delay_us(500000); // for .5s
 
-        }
+            for(volatile uint32_t i=0; i<1000000; i++); 
+            trigger_pulse();
+        
 
-        if (new_data_ready) {
+            if (new_data_ready) {
             // Safely read volatile variables
+                float current_distance = distance;
+
+                if(current_distance > 99.99){
+                    display_num(9999, 2);
+                }else{
+                    display_num((uint16_t)(current_distance*100), 2);
+                }
+                char str[100];
+                if(unit){
+                    sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fin\r\n", angle, pulse_width, current_distance);
+                }else{
+                    sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fcm\r\n", angle, pulse_width, current_distance);
+                }
+
+                for(int i = 0; str[i] != '\0'; i++) {
+                    send_char(USART2, str[i]);
+                }
+                new_data_ready = 0;
+            }
+        } 
+
+    for(volatile uint32_t i=0; i<1000000; i++); 
+
+    for(int angle= 45; angle>= -45; angle -= 5){ //for reverse sweeping
+        servo_angle_set(angle);
+
+        for(volatile uint32_t i=0; i<1000000; i++); 
+        trigger_pulse();
+
+        if(new_data_ready){
             float current_distance = distance;
 
             if(current_distance > 99.99){
@@ -111,17 +149,22 @@ int main() {
             }else{
                 display_num((uint16_t)(current_distance*100), 2);
             }
-            char str[40];
+
+            char str[100];
             if(unit){
-                sprintf(str, "Dist: %.2fin\r\n", current_distance);
+
+                sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fin\r\n", angle, pulse_width, current_distance);
             }else{
-                sprintf(str, "Dist: %.2fcm\r\n", current_distance);
+                sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fcm\r\n", angle, pulse_width, current_distance);
             }
+
             for(int i = 0; str[i] != '\0'; i++) {
                 send_char(USART2, str[i]);
             }
-            new_data_ready = 0; // Clear the flag
+            new_data_ready = 0;
         }
-    };
+        for(volatile uint32_t i=0; i<1000000; i++); //simple delay
+    }
+    }
     return 0;
 }
