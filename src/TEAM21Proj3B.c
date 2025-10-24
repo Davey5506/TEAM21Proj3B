@@ -45,7 +45,6 @@ void trigger_pulse(void){ //sends a 10us pulse to the trigger pin
 }
 
 void SysTick_Handler(void){
-
 }
 void EXTI0_IRQHandler(void){ 
     if(EXTI->PR & EXTI_PR_PR0){
