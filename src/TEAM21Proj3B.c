@@ -71,7 +71,7 @@ void EXTI15_10_IRQHandler(void){
 
 void servo_angle_set(int angle){
     pulse_width= 1500 - (500 * (angle/45.0));
-    TIM8->CCR1= pulse_width;
+    TIM8->CCR4= pulse_width;
 }
 
 void PWM_Output_PC6_Init(void){
