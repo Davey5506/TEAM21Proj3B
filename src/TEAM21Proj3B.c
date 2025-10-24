@@ -76,7 +76,6 @@ int main(){
 
     init_usart(115200);
     init_ssd(10);
-    display_num(0, 0);
     init_ultrasound();
     init_sys_tick(8000000); // 500ms period
     init_gp_timer(TIM2, 1000000, 0xFFFFFFFF, 1); // 1MHz timer for microsecond precision
