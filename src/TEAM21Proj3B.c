@@ -7,6 +7,30 @@ volatile uint32_t fall_time = 0;
 volatile uint8_t new_data_ready = 0;
 volatile uint8_t unit = 0; // 0 for cm, 1 for inches
 volatile uint32_t pulse_width=0;
+volatile int g_angle = 0;
+
+void print_data(void){
+    float current_distance = distance;
+    int angle = g_angle;
+
+    if(current_distance > 99.99){
+        display_num(9999, 2);
+    }else{
+        display_num((uint16_t)(current_distance*100), 2);
+    }
+
+    char str[100];
+    if(unit){
+
+        sprintf(str, "angle(deg): %d,\t pulsewidth(us): %lu,\t Dist: %.2fin\r\n", angle, pulse_width, current_distance);
+    }else{
+        sprintf(str, "angle(deg): %d,\t pulsewidth(us): %lu,\t Dist: %.2fcm\r\n", angle, pulse_width, current_distance);
+    }
+
+    for(int i = 0; str[i] != '\0'; i++) {
+        send_char(USART2, str[i]);
+    }
+}
 
 void delay_us(uint32_t us){
     uint32_t start = SysTick->VAL;
