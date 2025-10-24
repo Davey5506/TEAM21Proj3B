@@ -4,7 +4,6 @@ volatile float distance = 0.0;
 volatile uint32_t pulse_duration = 0;
 volatile uint32_t rise_time = 0;
 volatile uint32_t fall_time = 0;
-volatile uint8_t new_data_ready = 0;
 volatile uint8_t unit = 0; // 0 for cm, 1 for inches
 volatile uint32_t pulse_width=0;
 volatile int g_angle = 0;
