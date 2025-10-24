@@ -133,38 +133,38 @@ int main(){
             }
         } 
 
-    for(volatile uint32_t i=0; i<1000000; i++); 
-
-    for(int angle= 45; angle>= -45; angle -= 5){ //for reverse sweeping
-        servo_angle_set(angle);
-
         for(volatile uint32_t i=0; i<1000000; i++); 
-        trigger_pulse();
 
-        if(new_data_ready){
-            float current_distance = distance;
+        for(int angle= 45; angle>= -45; angle -= 5){ //for reverse sweeping
+            servo_angle_set(angle);
 
-            if(current_distance > 99.99){
-                display_num(9999, 2);
-            }else{
-                display_num((uint16_t)(current_distance*100), 2);
+            for(volatile uint32_t i=0; i<1000000; i++); 
+            trigger_pulse();
+
+            if(new_data_ready){
+                float current_distance = distance;
+
+                if(current_distance > 99.99){
+                    display_num(9999, 2);
+                }else{
+                    display_num((uint16_t)(current_distance*100), 2);
+                }
+
+                char str[100];
+                if(unit){
+
+                    sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fin\r\n", angle, pulse_width, current_distance);
+                }else{
+                    sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fcm\r\n", angle, pulse_width, current_distance);
+                }
+
+                for(int i = 0; str[i] != '\0'; i++) {
+                    send_char(USART2, str[i]);
+                }
+                new_data_ready = 0;
             }
-
-            char str[100];
-            if(unit){
-
-                sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fin\r\n", angle, pulse_width, current_distance);
-            }else{
-                sprintf(str, "angle(deg): %d, pulsewidth(us): %lu, Dist: %.2fcm\r\n", angle, pulse_width, current_distance);
-            }
-
-            for(int i = 0; str[i] != '\0'; i++) {
-                send_char(USART2, str[i]);
-            }
-            new_data_ready = 0;
+            for(volatile uint32_t i=0; i<1000000; i++); //simple delay
         }
-        for(volatile uint32_t i=0; i<1000000; i++); //simple delay
-    }
     }
     return 0;
 }
